@@ -9,12 +9,24 @@ import { stripe } from "./stripe";
 import { db } from "@/lib/db/client";
 import { accounts, auditLog, subscriptions } from "@/db/schema";
 
-// Maps Stripe price IDs → our plan names.
-function resolvePlan(priceId: string | null | undefined): string {
-  if (!priceId) return "unknown";
+// Compat interface for Stripe Subscription fields that shifted between API versions.
+// Stripe SDK v22 (API 2025-xx) moved current_period_end and trial_end — access via cast.
+interface SubCompat {
+  id: string;
+  status: Stripe.Subscription.Status;
+  current_period_end: number;
+  trial_end?: number | null;
+  items: { data: Array<{ price: string | { id: string } }> };
+  customer: string | { id: string };
+}
+
+// Maps Stripe price IDs → our plan enum.
+type OurPlan = "starter" | "growth" | "trial";
+
+function resolvePlan(priceId: string | null | undefined): OurPlan {
   if (priceId === process.env.STRIPE_STARTER_PRICE_ID) return "starter";
   if (priceId === process.env.STRIPE_GROWTH_PRICE_ID) return "growth";
-  return "unknown";
+  return "trial";
 }
 
 // Maps Stripe subscription statuses → our subscription_status enum.
@@ -102,12 +114,11 @@ async function handleCheckoutCompleted(
 
   if (!customerId || !subscriptionId) return;
 
-  // Expand the subscription to get full details.
-  const sub = await stripe.subscriptions.retrieve(subscriptionId, {
-    expand: ["items.data.price"],
-  });
+  // Retrieve and cast to our compat shape (current_period_end moved in Stripe API 2025+).
+  const sub = await stripe.subscriptions.retrieve(subscriptionId) as unknown as SubCompat;
 
-  const priceId = sub.items.data[0]?.price?.id;
+  const rawPrice = sub.items.data[0]?.price;
+  const priceId = typeof rawPrice === "string" ? rawPrice : rawPrice?.id;
   const plan = resolvePlan(priceId);
   const status = resolveStatus(sub.status);
 
@@ -150,8 +161,9 @@ async function handleCheckoutCompleted(
 }
 
 async function handleSubscriptionUpdated(
-  sub: Stripe.Subscription
+  rawSub: Stripe.Subscription
 ): Promise<void> {
+  const sub = rawSub as unknown as SubCompat;
   const customerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
@@ -165,7 +177,8 @@ async function handleSubscriptionUpdated(
   if (!existing) return; // subscription not in our system (safe to ignore)
 
   const { accountId } = existing;
-  const priceId = sub.items.data[0]?.price?.id;
+  const rawPrice = sub.items.data[0]?.price;
+  const priceId = typeof rawPrice === "string" ? rawPrice : rawPrice?.id;
   const plan = resolvePlan(priceId);
   const status = resolveStatus(sub.status);
 
@@ -190,8 +203,9 @@ async function handleSubscriptionUpdated(
 }
 
 async function handleSubscriptionDeleted(
-  sub: Stripe.Subscription
+  rawSub: Stripe.Subscription
 ): Promise<void> {
+  const sub = rawSub as unknown as SubCompat;
   const [existing] = await db
     .select({ accountId: subscriptions.accountId })
     .from(subscriptions)
@@ -217,10 +231,12 @@ async function handleSubscriptionDeleted(
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
+  // invoice.subscription was renamed in Stripe API 2025+ — cast to access it.
+  const inv = invoice as unknown as { subscription?: string | { id: string } };
   const subscriptionId =
-    typeof invoice.subscription === "string"
-      ? invoice.subscription
-      : invoice.subscription?.id;
+    typeof inv.subscription === "string"
+      ? inv.subscription
+      : inv.subscription?.id;
 
   if (!subscriptionId) return;
 

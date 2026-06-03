@@ -27,6 +27,7 @@
 - Phase 3 COMPLETE: compliance engine (lib/compliance/engine.ts). Template rules vs coverages → compliance_results. Expiry priority: non-compliant > expired > expiring-soon > compliant. ✓ tsc, ✓ 2/2 tests.
 - Phase 4 COMPLETE: HITL resolver (lib/hitl/resolver.ts). resolveReview(): approve/reject, apply reviewer corrections, re-evaluate compliance, immutable audit_log. ✓ tsc, ✓ 2/2 tests.
 - Phase 5 COMPLETE: Stripe payments (lib/payments/). stripe.ts singleton, checkout.ts (14-day trial, card required), portal.ts, webhooks.ts (sig-verified; 4 events: checkout.session.completed, subscription.updated/deleted, invoice.payment_failed). ✓ tsc, ✓ 2/2 tests.
+- Phase 6 COMPLETE: Background jobs (lib/jobs/). types.ts, queue.ts (enqueueJob + scheduleRemindersForCertificate), email.ts (stub — TODO: wire real provider), processor.ts (processNextBatch: claim + run + backoff). ✓ tsc, ✓ 2/2 tests.
 
 ## IN PROGRESS
 
@@ -45,5 +46,6 @@
   covering parseDollarAmount, parseDate, validateAndNormalize edge cases.
 - Codex: write CRUD route handlers for vendors, certificates, requirements per API_CONTRACT.md.
 - [DONE by Codex] POST /api/reviews/:id/resolve + GET /api/reviews — on codex-work.
-- Codex: implement POST /api/stripe/checkout and POST /api/stripe/portal routes (call lib/payments/checkout.ts and lib/payments/portal.ts).
-- Codex: implement POST /api/webhooks/stripe route: read raw body as Buffer, call verifyAndParseWebhook(), then processWebhookEvent(). Return 400 on bad signature, 200 on success or unknown event.
+- Codex: implement POST /api/stripe/checkout and POST /api/stripe/portal routes.
+- Codex: implement POST /api/webhooks/stripe route: read raw body as Buffer, call verifyAndParseWebhook() → 400 on bad sig, then processWebhookEvent() → 200.
+- Codex: implement GET+POST /api/cron route calling processNextBatch(5) from lib/jobs/processor.ts. Protect with CRON_SECRET header check.
