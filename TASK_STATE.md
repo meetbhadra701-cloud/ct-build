@@ -19,6 +19,10 @@
 - Added architecture and rejected-feature documentation stubs.
 - Added cross-tenant isolation security test.
 - Phase 0 + Phase 1 COMPLETE: ✓ build (Next 16 / Tailwind v4), ✓ typecheck, ✓ tests (2/2 pass), contracts frozen v1, Drizzle migration generated, vault Decision Log updated.
+- Supabase project `ct-build` (ylncnjleylmbzklmqafk) created and healthy — West US (Oregon), NANO compute.
+- Migration applied: 13 tables live in Supabase PostgreSQL 17.6.
+- audit_log immutability trigger active (blocks UPDATE + DELETE).
+- .env.local written (gitignored); DATABASE_URL uses session pooler (IPv4 compatible).
 
 ## IN PROGRESS
 
@@ -26,7 +30,7 @@
 
 ## BLOCKED
 
-- Applying the generated Drizzle migration to Supabase is blocked until `DATABASE_URL` is provided in `.env.local` or the environment.
+- (none — migration applied, all keys in .env.local)
 
 ## NEXT CODEX TASKS
 
