@@ -30,5 +30,4 @@
 
 ## NEXT CODEX TASKS
 
-- After verification, create `../ct-codex` on `codex-work`.
 - Codex may then implement `/lib/dates` expiry/reminder utilities and tests against frozen v1 contracts.
