@@ -23,6 +23,7 @@
 - Migration applied: 13 tables live in Supabase PostgreSQL 17.6.
 - audit_log immutability trigger active (blocks UPDATE + DELETE).
 - .env.local written (gitignored); DATABASE_URL uses session pooler (IPv4 compatible).
+- Phase 2 COMPLETE: extraction pipeline (lib/extraction/, lib/storage/, lib/db/) committed. ✓ tsc, ✓ 2/2 tests.
 
 ## IN PROGRESS
 
@@ -34,4 +35,9 @@
 
 ## NEXT CODEX TASKS
 
-- Codex may then implement `/lib/dates` expiry/reminder utilities and tests against frozen v1 contracts.
+- [DONE] `/lib/dates` — implemented in ct-codex worktree, 12/13 tests pass. One failing test:
+  `tests/dates/expiry.test.ts:80` — off-by-one in 14-day reminder schedule for 2028-03-01 expiry.
+  Expected `2028-02-15` but Feb 15 is 15 days before March 1, not 14. Fix the expected value.
+- Codex: write extraction validation tests (`tests/extraction/validate.test.ts`)
+  covering parseDollarAmount, parseDate, validateAndNormalize edge cases.
+- Codex: write CRUD route handlers for vendors, certificates, requirements per API_CONTRACT.md.
