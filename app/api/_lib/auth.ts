@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export type AuthenticatedAccount = {
   userId: string;
   accountId: string;
+  email: string;
 };
 
 export async function getAuthenticatedAccount(): Promise<AuthenticatedAccount | null> {
@@ -23,7 +24,8 @@ export async function getAuthenticatedAccount(): Promise<AuthenticatedAccount | 
   const [appUser] = await db
     .select({
       userId: users.id,
-      accountId: users.accountId
+      accountId: users.accountId,
+      email: users.email
     })
     .from(users)
     .where(eq(users.id, user.id))
