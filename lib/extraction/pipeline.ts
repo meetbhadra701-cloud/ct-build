@@ -113,8 +113,13 @@ export async function runExtractionPipeline(
       },
     });
   } else {
-    // Extraction passed validation — certificate status stays 'processing'
-    // until the compliance engine evaluates it (Phase 3).
+    // Extraction passed validation — mark certificate approved (extraction lifecycle done).
+    // The compliance engine will write a compliance_result separately.
+    await db
+      .update(certificates)
+      .set({ status: "approved", updatedAt: new Date() })
+      .where(eq(certificates.id, certificateId));
+
     await db.insert(auditLog).values({
       accountId,
       actorType: "system",
