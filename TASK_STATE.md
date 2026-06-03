@@ -28,6 +28,7 @@
 - Phase 4 COMPLETE: HITL resolver (lib/hitl/resolver.ts). resolveReview(): approve/reject, apply reviewer corrections, re-evaluate compliance, immutable audit_log. ✓ tsc, ✓ 2/2 tests.
 - Phase 5 COMPLETE: Stripe payments (lib/payments/). stripe.ts singleton, checkout.ts (14-day trial, card required), portal.ts, webhooks.ts (sig-verified; 4 events: checkout.session.completed, subscription.updated/deleted, invoice.payment_failed). ✓ tsc, ✓ 2/2 tests.
 - Phase 6 COMPLETE: Background jobs (lib/jobs/). types.ts, queue.ts (enqueueJob + scheduleRemindersForCertificate), email.ts (stub — TODO: wire real provider), processor.ts (processNextBatch: claim + run + backoff). ✓ tsc, ✓ 2/2 tests.
+- Phase 7 COMPLETE: Security pass. RLS enabled on all 13 tables + verified (anon key → 42501). coi-files bucket created (private, 10MB, PDF/image). docs/security.md written. Remaining: email webhook sig verification (choose provider first), attorney ToS review before first paying customer.
 
 ## IN PROGRESS
 
