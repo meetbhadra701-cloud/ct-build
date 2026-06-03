@@ -25,6 +25,7 @@
 - .env.local written (gitignored); DATABASE_URL uses session pooler (IPv4 compatible).
 - Phase 2 COMPLETE: extraction pipeline (lib/extraction/, lib/storage/, lib/db/) committed. ✓ tsc, ✓ 2/2 tests.
 - Phase 3 COMPLETE: compliance engine (lib/compliance/engine.ts). Template rules vs coverages → compliance_results. Expiry priority: non-compliant > expired > expiring-soon > compliant. ✓ tsc, ✓ 2/2 tests.
+- Phase 4 COMPLETE: HITL resolver (lib/hitl/resolver.ts). resolveReview(): approve/reject, apply reviewer corrections, re-evaluate compliance, immutable audit_log. ✓ tsc, ✓ 2/2 tests.
 
 ## IN PROGRESS
 
@@ -42,3 +43,4 @@
 - Codex: write extraction validation tests (`tests/extraction/validate.test.ts`)
   covering parseDollarAmount, parseDate, validateAndNormalize edge cases.
 - Codex: write CRUD route handlers for vendors, certificates, requirements per API_CONTRACT.md.
+- Codex: implement POST /api/reviews/:id/resolve calling lib/hitl/resolver.resolveReview().
