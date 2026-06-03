@@ -23,10 +23,11 @@
 - Migration applied: 13 tables live in Supabase PostgreSQL 17.6.
 - audit_log immutability trigger active (blocks UPDATE + DELETE).
 - .env.local written (gitignored); DATABASE_URL uses session pooler (IPv4 compatible).
+- Phase 2 COMPLETE: extraction pipeline (lib/extraction/, lib/storage/, lib/db/) committed. ✓ tsc, ✓ 2/2 tests.
 
 ## IN PROGRESS
 
-- Phase 2 extraction pipeline: typecheck in progress
+- (none)
 
 ## BLOCKED
 
