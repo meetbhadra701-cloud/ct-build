@@ -4,7 +4,7 @@
 
 - `SCHEMA.md`: **frozen v1** on 2026-06-03
 - `API_CONTRACT.md`: **frozen v1** on 2026-06-03
-- Codex worktree: pending creation at `../ct-codex` on branch `codex-work`
+- Codex worktree: ✓ created at `../ct-codex` on branch `codex-work`
 
 ## DONE
 
@@ -18,10 +18,11 @@
 - Froze `SCHEMA.md` v1 and `API_CONTRACT.md` v1.
 - Added architecture and rejected-feature documentation stubs.
 - Added cross-tenant isolation security test.
+- Phase 0 + Phase 1 COMPLETE: ✓ build (Next 16 / Tailwind v4), ✓ typecheck, ✓ tests (2/2 pass), contracts frozen v1, Drizzle migration generated, vault Decision Log updated.
 
 ## IN PROGRESS
 
-- Phase 0 + Phase 1 scaffold verification.
+- (none)
 
 ## BLOCKED
 
