@@ -19,8 +19,7 @@ const MAX_ATTEMPTS = 3;
 //   SELECT ... FOR UPDATE SKIP LOCKED
 // via db.execute(sql`...`) to prevent double-processing.
 export async function processNextBatch(batchSize = 5): Promise<number> {
-  const now = new Date();
-  const staleCutoff = new Date(now.getTime() - 10 * 60 * 1000); // 10 min stale lock
+  // Use DB's NOW() for all time comparisons — avoids client/server clock skew.
 
   // Atomically claim a batch of queued jobs.
   const claimed = await db.transaction(async (tx) => {
@@ -30,8 +29,11 @@ export async function processNextBatch(batchSize = 5): Promise<number> {
       .where(
         and(
           sql`${jobs.status} = 'queued'`,
-          lte(jobs.runAfter, now),
-          or(isNull(jobs.lockedAt), lt(jobs.lockedAt, staleCutoff))
+          sql`${jobs.runAfter} <= NOW()`,
+          or(
+            isNull(jobs.lockedAt),
+            sql`${jobs.lockedAt} < NOW() - interval '10 minutes'`
+          )
         )
       )
       .orderBy(jobs.runAfter)
@@ -45,9 +47,9 @@ export async function processNextBatch(batchSize = 5): Promise<number> {
       .update(jobs)
       .set({
         status: "running",
-        lockedAt: now,
+        lockedAt: sql`NOW()`,
         attempts: sql`${jobs.attempts} + 1`,
-        updatedAt: now,
+        updatedAt: sql`NOW()`,
       })
       .where(inArray(jobs.id, ids))
       .returning({

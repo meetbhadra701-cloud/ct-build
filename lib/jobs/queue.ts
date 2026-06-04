@@ -1,9 +1,10 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { accounts, jobs, reminders } from "@/db/schema";
 import type { JobPayload, JobType } from "./types";
 
 // Adds a job to the DB-backed queue. Returns the new job's ID.
+// runAfter defaults to NOW() using the DB clock to avoid client/server timezone skew.
 export async function enqueueJob(params: {
   type: JobType;
   payload: JobPayload;
@@ -15,7 +16,8 @@ export async function enqueueJob(params: {
       type: params.type,
       payload: params.payload as unknown as Record<string, unknown>,
       status: "queued",
-      runAfter: params.runAfter ?? new Date(),
+      // Use DB's NOW() when no explicit runAfter provided — avoids timezone skew.
+      runAfter: params.runAfter ?? sql`NOW()`,
     })
     .returning({ id: jobs.id });
 
