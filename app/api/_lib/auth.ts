@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 
 import { users } from "@/db/schema";
 import { db } from "@/lib/db/client";
@@ -12,10 +13,20 @@ export type AuthenticatedAccount = {
 
 export async function getAuthenticatedAccount(): Promise<AuthenticatedAccount | null> {
   const supabase = await createSupabaseServerClient();
+
+  // Support both cookie-based SSR auth (browser) and Bearer token auth (API clients).
+  const headersList = await headers();
+  const authHeader = headersList.get("Authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : null;
+
   const {
     data: { user },
     error
-  } = await supabase.auth.getUser();
+  } = bearerToken
+    ? await supabase.auth.getUser(bearerToken)
+    : await supabase.auth.getUser();
 
   if (error || !user) {
     return null;
