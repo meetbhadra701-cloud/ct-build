@@ -9,6 +9,10 @@ import { StatusBadge } from "./status-badge";
 type Vendor = { id: string; name: string; trade: string | null; status: string };
 type Counts = Record<"compliant" | "expiring-soon" | "expired" | "non-compliant", number>;
 type VendorRow = Vendor & { complianceStatus: string };
+type CertificateSummary = {
+  id: string;
+  latest_compliance_result: { status: string } | null;
+};
 
 const emptyCounts: Counts = {
   compliant: 0,
@@ -34,17 +38,14 @@ export function DashboardHome() {
 
         const rows = await Promise.all(
           vendorResponse.vendors.map(async (vendor) => {
-            const certs = await apiFetch<{ certificates: { id: string }[] }>(
+            const certs = await apiFetch<{ certificates: CertificateSummary[] }>(
               `/api/certificates?vendor_id=${vendor.id}`
             );
             const latest = certs.certificates[0];
             if (!latest) return { ...vendor, complianceStatus: "non-compliant" };
-            const detail = await apiFetch<{
-              latest_compliance_result: { status: string } | null;
-            }>(`/api/certificates/${latest.id}`);
             return {
               ...vendor,
-              complianceStatus: detail.latest_compliance_result?.status ?? "non-compliant"
+              complianceStatus: latest.latest_compliance_result?.status ?? "non-compliant"
             };
           })
         );
@@ -105,6 +106,11 @@ export function DashboardHome() {
                   </td>
                 </tr>
               ))}
+              {!message && vendors.length === 0 ? (
+                <tr>
+                  <td colSpan={3}>No vendors have been added yet.</td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>

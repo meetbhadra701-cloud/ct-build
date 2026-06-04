@@ -1,13 +1,13 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { certificates, vendors } from "@/db/schema";
+import { certificates, complianceResults, vendors } from "@/db/schema";
 import { db } from "@/lib/db/client";
 import { enqueueJob } from "@/lib/jobs/queue";
 import { getAuthenticatedAccount } from "../_lib/auth";
 import { badRequest, notFound, unauthorized } from "../_lib/http";
-import { serializeCertificate } from "./_serialize";
+import { serializeCertificate, serializeComplianceResult } from "./_serialize";
 
 const certificateStatuses = new Set(["processing", "needs_review", "approved", "rejected"]);
 
@@ -47,8 +47,38 @@ export async function GET(request: NextRequest) {
     .where(and(...filters))
     .orderBy(desc(certificates.createdAt));
 
+  const certificateIds = rows.map((certificate) => certificate.id);
+  const latestComplianceByCertificate = new Map<string, typeof complianceResults.$inferSelect>();
+
+  if (certificateIds.length > 0) {
+    const complianceRows = await db
+      .select()
+      .from(complianceResults)
+      .where(
+        and(
+          eq(complianceResults.accountId, auth.accountId),
+          inArray(complianceResults.certificateId, certificateIds)
+        )
+      )
+      .orderBy(desc(complianceResults.evaluatedAt));
+
+    for (const result of complianceRows) {
+      if (!latestComplianceByCertificate.has(result.certificateId)) {
+        latestComplianceByCertificate.set(result.certificateId, result);
+      }
+    }
+  }
+
   return NextResponse.json({
-    certificates: rows.map(serializeCertificate)
+    certificates: rows.map((certificate) => {
+      const latestComplianceResult = latestComplianceByCertificate.get(certificate.id);
+      return {
+        ...serializeCertificate(certificate),
+        latest_compliance_result: latestComplianceResult
+          ? serializeComplianceResult(latestComplianceResult)
+          : null
+      };
+    })
   });
 }
 
