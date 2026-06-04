@@ -9,6 +9,7 @@ import { getAuthenticatedAccount } from "../api/_lib/auth";
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/vendors", label: "Vendors" },
+  { href: "/dashboard/requirements", label: "Requirements" },
   { href: "/dashboard/reviews", label: "Reviews" },
   { href: "/dashboard/settings", label: "Settings" }
 ];

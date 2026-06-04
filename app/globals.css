@@ -130,6 +130,17 @@ th {
   max-width: 720px;
 }
 
+.compact-form {
+  box-shadow: none;
+  margin-top: 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -147,6 +158,57 @@ th {
   color: var(--foreground);
   min-height: 44px;
   padding: 10px 12px;
+}
+
+.field input:disabled {
+  background: var(--surface-strong);
+  color: var(--muted);
+}
+
+.checkbox-field {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.checkbox-field input {
+  height: 20px;
+  width: 20px;
+}
+
+.checkbox-field label {
+  font-weight: 700;
+}
+
+.checkbox-field-end {
+  align-self: end;
+}
+
+.rules-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 18px;
+}
+
+.rules-fieldset legend {
+  font-weight: 800;
+  padding: 0 8px;
+}
+
+.rule-row {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+}
+
+.rule-row:first-of-type {
+  border-top: 0;
+  padding-top: 0;
 }
 
 .button-primary,
@@ -335,6 +397,38 @@ th {
   padding: 16px;
 }
 
+.template-list {
+  display: grid;
+  gap: 12px;
+}
+
+.template-button {
+  align-items: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--foreground);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  min-height: 60px;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.template-button span {
+  font-weight: 800;
+}
+
+.template-button small {
+  color: var(--muted);
+}
+
+.template-button-active {
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
 .detail-list {
   display: grid;
   gap: 12px;
@@ -381,6 +475,10 @@ th {
 
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }
 

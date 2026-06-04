@@ -6,12 +6,13 @@ import { requirementTemplates } from "@/db/schema";
 import { db } from "@/lib/db/client";
 import { getAuthenticatedAccount } from "../../_lib/auth";
 import { badRequest, notFound, unauthorized } from "../../_lib/http";
+import { rulesInputSchema } from "../_rules";
 import { serializeRequirementTemplate } from "../_serialize";
 
 const updateRequirementSchema = z
   .object({
     name: z.string().trim().min(1).optional(),
-    rules: z.record(z.string(), z.unknown()).optional(),
+    rules: rulesInputSchema.optional(),
     expiring_soon_window_days: z.number().int().positive().optional()
   })
   .refine((value) => Object.keys(value).length > 0, {

@@ -6,11 +6,12 @@ import { requirementTemplates } from "@/db/schema";
 import { db } from "@/lib/db/client";
 import { getAuthenticatedAccount } from "../_lib/auth";
 import { badRequest, unauthorized } from "../_lib/http";
+import { rulesInputSchema } from "./_rules";
 import { serializeRequirementTemplate } from "./_serialize";
 
 const createRequirementSchema = z.object({
   name: z.string().trim().min(1),
-  rules: z.record(z.string(), z.unknown()),
+  rules: rulesInputSchema,
   expiring_soon_window_days: z.number().int().positive().optional()
 });
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
   const parsed = createRequirementSchema.safeParse(body);
 
   if (!parsed.success) {
-    return badRequest("Body must include name, rules object, and optional positive expiring_soon_window_days.");
+    return badRequest("Body must include name, supported coverage rules, and optional positive expiring_soon_window_days.");
   }
 
   const [requirement] = await db

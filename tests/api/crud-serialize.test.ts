@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { serializeRequirementTemplate } from "../../app/api/requirements/_serialize.ts";
+import { rulesInputSchema } from "../../app/api/requirements/_rules.ts";
 import { serializeVendor } from "../../app/api/vendors/_serialize.ts";
 
 test("serializeVendor returns the frozen snake_case API shape", () => {
@@ -57,5 +58,58 @@ test("serializeRequirementTemplate returns the frozen snake_case API shape", () 
     expiring_soon_window_days: 30,
     created_at: "2026-06-03T15:00:00.000Z",
     updated_at: "2026-06-03T16:00:00.000Z"
+  });
+});
+
+test("rulesInputSchema stores contract object rules as compliance-engine rule rows", () => {
+  const parsed = rulesInputSchema.parse({
+    general_liability: {
+      min_each_occurrence: 1_000_000,
+      min_aggregate: 2_000_000,
+      additional_insured_required: true
+    },
+    auto: {
+      min_each_occurrence: 1_000_000,
+      additional_insured_required: true
+    }
+  });
+
+  assert.deepEqual(parsed, [
+    {
+      coverage_type: "general_liability",
+      min_each_occurrence: 1_000_000,
+      min_aggregate: 2_000_000,
+      additional_insured_required: true
+    },
+    {
+      coverage_type: "auto",
+      min_each_occurrence: 1_000_000,
+      additional_insured_required: true
+    }
+  ]);
+});
+
+test("serializeRequirementTemplate returns object rules for stored rule rows", () => {
+  const requirement = serializeRequirementTemplate({
+    id: "requirement-2",
+    accountId: "account-1",
+    name: "Engine-shaped requirements",
+    rules: [
+      {
+        coverage_type: "general_liability",
+        min_each_occurrence: 1_000_000,
+        additional_insured_required: true
+      }
+    ],
+    expiringSoonWindowDays: 30,
+    createdAt: new Date("2026-06-03T15:00:00.000Z"),
+    updatedAt: new Date("2026-06-03T16:00:00.000Z")
+  });
+
+  assert.deepEqual(requirement.rules, {
+    general_liability: {
+      min_each_occurrence: 1_000_000,
+      additional_insured_required: true
+    }
   });
 });

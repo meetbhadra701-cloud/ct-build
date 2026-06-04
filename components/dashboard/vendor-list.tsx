@@ -5,14 +5,7 @@ import { useEffect, useState } from "react";
 
 import { apiFetch } from "./api";
 import { StatusBadge } from "./status-badge";
-
-type Vendor = {
-  id: string;
-  name: string;
-  contact_email: string | null;
-  trade: string | null;
-  status: string;
-};
+import { VendorForm, type Vendor } from "./vendor-form";
 
 export function VendorList() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -44,6 +37,10 @@ export function VendorList() {
         <p className="eyebrow">Portfolio</p>
         <h1>Vendors</h1>
       </header>
+      <section className="section-block" aria-labelledby="add-vendor-title">
+        <h2 id="add-vendor-title">Add vendor</h2>
+        <VendorForm onCreated={(vendor) => setVendors((current) => [vendor, ...current])} />
+      </section>
       <section className="section-block" aria-labelledby="vendors-list-title">
         <div className="section-header">
           <h2 id="vendors-list-title">Vendor directory</h2>
