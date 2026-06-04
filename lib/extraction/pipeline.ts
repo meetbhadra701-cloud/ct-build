@@ -11,6 +11,7 @@ import {
   extractions,
   reviewTasks,
 } from "@/db/schema";
+import { evaluateAllTemplatesForCert } from "@/lib/compliance/engine";
 import { extractFromPDF } from "./extract";
 import { validateAndNormalize } from "./validate";
 
@@ -113,8 +114,7 @@ export async function runExtractionPipeline(
       },
     });
   } else {
-    // Extraction passed validation — mark certificate approved (extraction lifecycle done).
-    // The compliance engine will write a compliance_result separately.
+    // Extraction passed validation — mark certificate approved.
     await db
       .update(certificates)
       .set({ status: "approved", updatedAt: new Date() })
@@ -131,6 +131,11 @@ export async function runExtractionPipeline(
         model,
       },
     });
+
+    // Run compliance evaluation against every requirement template for this account.
+    // If no templates exist yet, this is a no-op — the result is recorded once templates
+    // are added (via the compliance job triggered by the requirements API).
+    await evaluateAllTemplatesForCert({ certificateId, accountId });
   }
 
   return {
