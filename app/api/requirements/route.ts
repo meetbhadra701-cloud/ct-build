@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requirementTemplates } from "@/db/schema";
 import { db } from "@/lib/db/client";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { getAuthenticatedAccount } from "../_lib/auth";
 import { badRequest, unauthorized } from "../_lib/http";
 import { rulesInputSchema } from "./_rules";
@@ -56,6 +57,16 @@ export async function POST(request: NextRequest) {
       expiringSoonWindowDays: parsed.data.expiring_soon_window_days ?? 30
     })
     .returning();
+
+  // Enqueue background job to evaluate all existing approved certs against the new template.
+  // Fire-and-forget — the API returns immediately; compliance results appear after cron runs.
+  await enqueueJob({
+    type: "compliance",
+    payload: {
+      requirementTemplateId: requirement.id,
+      accountId: auth.accountId,
+    },
+  });
 
   return NextResponse.json(
     { requirement: serializeRequirementTemplate(requirement) },

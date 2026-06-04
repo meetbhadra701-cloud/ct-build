@@ -2,10 +2,11 @@
 // It tracks and matches requirements. It does NOT advise on coverage adequacy.
 // Codex never edits this file.
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   auditLog,
+  certificates,
   complianceResults,
   coverages as coveragesTable,
   requirementTemplates,
@@ -254,4 +255,82 @@ export async function evaluateCompliance(params: {
     status: overallStatus,
     ruleResults,
   };
+}
+
+// evaluateAllTemplatesForCert is called after extraction completes.
+// Finds every requirement template for the account and evaluates the cert against each.
+// A new account with no templates gets 0 compliance results — that is correct.
+export async function evaluateAllTemplatesForCert(params: {
+  certificateId: string;
+  accountId: string;
+}): Promise<ComplianceEvaluation[]> {
+  const { certificateId, accountId } = params;
+
+  const templates = await db
+    .select({ id: requirementTemplates.id })
+    .from(requirementTemplates)
+    .where(eq(requirementTemplates.accountId, accountId));
+
+  if (templates.length === 0) return [];
+
+  return Promise.all(
+    templates.map((t) =>
+      evaluateCompliance({
+        certificateId,
+        accountId,
+        requirementTemplateId: t.id,
+      })
+    )
+  );
+}
+
+// reevaluateAllCertsForTemplate is called after a requirement template is created or
+// updated. It re-evaluates every approved certificate for the account so the dashboard
+// reflects the new rules without waiting for the next upload.
+export async function reevaluateAllCertsForTemplate(params: {
+  requirementTemplateId: string;
+  accountId: string;
+}): Promise<number> {
+  const { requirementTemplateId, accountId } = params;
+
+  // Only re-evaluate approved certs (extraction passed, not stuck in review).
+  // Certs still processing or in review will be evaluated when they exit that state.
+  const approvedCerts = await db
+    .select({ id: certificates.id })
+    .from(certificates)
+    .where(
+      and(
+        eq(certificates.accountId, accountId),
+        eq(certificates.status, "approved")
+      )
+    );
+
+  if (approvedCerts.length === 0) return 0;
+
+  // Only re-evaluate certs that actually have extracted coverage lines.
+  const certIds = approvedCerts.map((c) => c.id);
+  const certsWithCoverages = await db
+    .selectDistinct({ certId: coveragesTable.certificateId })
+    .from(coveragesTable)
+    .where(
+      and(
+        eq(coveragesTable.accountId, accountId),
+        inArray(coveragesTable.certificateId, certIds)
+      )
+    );
+
+  const evaluableCertIds = certsWithCoverages.map((r) => r.certId);
+  if (evaluableCertIds.length === 0) return 0;
+
+  await Promise.all(
+    evaluableCertIds.map((certId) =>
+      evaluateCompliance({
+        certificateId: certId,
+        accountId,
+        requirementTemplateId,
+      })
+    )
+  );
+
+  return evaluableCertIds.length;
 }

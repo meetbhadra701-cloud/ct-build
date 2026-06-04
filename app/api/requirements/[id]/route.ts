@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requirementTemplates } from "@/db/schema";
 import { db } from "@/lib/db/client";
+import { enqueueJob } from "@/lib/jobs/queue";
 import { getAuthenticatedAccount } from "../../_lib/auth";
 import { badRequest, notFound, unauthorized } from "../../_lib/http";
 import { rulesInputSchema } from "../_rules";
@@ -55,6 +56,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   if (!requirement) {
     return notFound("Requirement template not found.");
+  }
+
+  // If rules or window changed, re-evaluate all existing approved certs for this account.
+  const rulesOrWindowChanged =
+    parsed.data.rules !== undefined ||
+    parsed.data.expiring_soon_window_days !== undefined;
+
+  if (rulesOrWindowChanged) {
+    await enqueueJob({
+      type: "compliance",
+      payload: {
+        requirementTemplateId: requirement.id,
+        accountId: auth.accountId,
+      },
+    });
   }
 
   return NextResponse.json({ requirement: serializeRequirementTemplate(requirement) });

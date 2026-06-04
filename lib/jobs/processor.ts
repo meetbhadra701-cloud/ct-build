@@ -3,11 +3,15 @@
 
 import { and, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
-import { evaluateCompliance } from "@/lib/compliance/engine";
+import { reevaluateAllCertsForTemplate } from "@/lib/compliance/engine";
 import { runExtractionPipeline } from "@/lib/extraction/pipeline";
 import { jobs, reminders } from "@/db/schema";
 import { sendVendorReminderEmail } from "./email";
-import type { ExtractionJobPayload, ReminderJobPayload } from "./types";
+import type {
+  ComplianceJobPayload,
+  ExtractionJobPayload,
+  ReminderJobPayload,
+} from "./types";
 
 const MAX_ATTEMPTS = 3;
 
@@ -68,6 +72,8 @@ export async function processNextBatch(batchSize = 5): Promise<number> {
         await handleExtractJob(job.payload as unknown as ExtractionJobPayload);
       } else if (job.type === "remind") {
         await handleRemindJob(job.payload as unknown as ReminderJobPayload);
+      } else if (job.type === "compliance") {
+        await handleComplianceJob(job.payload as unknown as ComplianceJobPayload);
       }
 
       await db
@@ -107,21 +113,23 @@ export async function processNextBatch(batchSize = 5): Promise<number> {
 // ── handlers ────────────────────────────────────────────────────────────────
 
 async function handleExtractJob(payload: ExtractionJobPayload): Promise<void> {
-  const result = await runExtractionPipeline({
+  // Compliance evaluation against all account templates runs inside the pipeline
+  // when extraction succeeds — no extra work needed here.
+  await runExtractionPipeline({
     certificateId: payload.certificateId,
     accountId: payload.accountId,
     storageKey: payload.storageKey,
     filename: payload.filename,
   });
+}
 
-  // Run compliance immediately if a template is specified and extraction passed.
-  if (!result.requiresHitl && payload.requirementTemplateId) {
-    await evaluateCompliance({
-      certificateId: payload.certificateId,
-      accountId: payload.accountId,
-      requirementTemplateId: payload.requirementTemplateId,
-    });
-  }
+async function handleComplianceJob(
+  payload: ComplianceJobPayload
+): Promise<void> {
+  await reevaluateAllCertsForTemplate({
+    requirementTemplateId: payload.requirementTemplateId,
+    accountId: payload.accountId,
+  });
 }
 
 async function handleRemindJob(payload: ReminderJobPayload): Promise<void> {

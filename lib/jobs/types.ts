@@ -5,8 +5,6 @@ export interface ExtractionJobPayload {
   accountId: string;
   storageKey: string;
   filename?: string;
-  // If provided, the compliance engine runs immediately after extraction succeeds.
-  requirementTemplateId?: string;
 }
 
 export interface ReminderJobPayload {
@@ -22,5 +20,15 @@ export interface ReminderJobPayload {
   expiryDate?: string;
 }
 
-export type JobType = "extract" | "remind";
-export type JobPayload = ExtractionJobPayload | ReminderJobPayload;
+// Triggered when a requirement template is created or updated.
+// Re-evaluates all approved certificates for the account against the template.
+export interface ComplianceJobPayload {
+  requirementTemplateId: string;
+  accountId: string;
+}
+
+export type JobType = "extract" | "remind" | "compliance";
+export type JobPayload =
+  | ExtractionJobPayload
+  | ReminderJobPayload
+  | ComplianceJobPayload;
