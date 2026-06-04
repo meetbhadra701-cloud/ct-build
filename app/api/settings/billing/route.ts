@@ -29,6 +29,7 @@ export async function GET(_request: NextRequest) {
 
   return NextResponse.json({
     account,
+    has_stripe_customer: Boolean(account?.stripeCustomerId),
     subscription: subscription
       ? {
           id: subscription.id,

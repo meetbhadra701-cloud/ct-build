@@ -6,6 +6,7 @@ import { apiFetch } from "./api";
 
 type Billing = {
   account: { name: string; plan: string } | null;
+  has_stripe_customer: boolean;
   subscription: { plan: string; status: string } | null;
 };
 
@@ -44,21 +45,32 @@ export function SettingsPanel() {
           Current plan: <strong>{billing?.subscription?.plan ?? billing?.account?.plan ?? "trial"}</strong>
         </p>
         <p>Status: {billing?.subscription?.status ?? "No subscription yet"}</p>
-        <div className="field">
-          <label htmlFor="upgrade-plan">Upgrade plan</label>
-          <select id="upgrade-plan" value={plan} onChange={(event) => setPlan(event.target.value as "starter" | "growth")}>
-            <option value="starter">Starter</option>
-            <option value="growth">Growth</option>
-          </select>
-        </div>
-        <div className="action-row">
-          <button className="button-primary" type="button" onClick={() => redirectFrom("/api/stripe/checkout", { plan })}>
-            Upgrade
-          </button>
-          <button className="button-secondary" type="button" onClick={() => redirectFrom("/api/stripe/portal")}>
-            Manage billing
-          </button>
-        </div>
+        {billing?.has_stripe_customer ? (
+          <div className="action-row">
+            <button className="button-primary" type="button" onClick={() => redirectFrom("/api/stripe/portal")}>
+              Manage billing
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="field">
+              <label htmlFor="upgrade-plan">Upgrade plan</label>
+              <select
+                id="upgrade-plan"
+                value={plan}
+                onChange={(event) => setPlan(event.target.value as "starter" | "growth")}
+              >
+                <option value="starter">Starter</option>
+                <option value="growth">Growth</option>
+              </select>
+            </div>
+            <div className="action-row">
+              <button className="button-primary" type="button" onClick={() => redirectFrom("/api/stripe/checkout", { plan })}>
+                Upgrade
+              </button>
+            </div>
+          </>
+        )}
       </section>
     </>
   );
